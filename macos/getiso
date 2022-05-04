@@ -1,0 +1,41 @@
+#!/bin/bash
+# getiso
+
+PRG=`basename $0`
+RED2="$(tput bold; tput setaf 1)" YELLOW2="$(tput bold; tput setaf 3)"
+BLUE2="$(tput bold; tput setaf 4)" PURPLE2="$(tput bold; tput setaf 5)"
+NC="$(tput sgr0)"
+PrintExit() { printf "==> ${RED2}${1}${NC}\n" ; exit 1 ; }
+ISO_CENTOS="CentOS-7-x86_64-Minimal-1503-01.iso"
+ISO_UBUNTU="ubuntu-15.04-server-amd64.iso"
+
+usage_func() { printf "Usage: $PRG <centos|ubuntu>     Download respective OS ISO file\n" ; }
+
+getiso_func() {
+   OS=$1 OS=`echo $OS | tr [A-Z] [a-z]`
+   [[ "$OS" != "centos" && "$OS" != "ubuntu" ]] && usage_func && exit 1
+   if [[ "$OS" == "centos" ]]; then
+      ISO=$ISO_CENTOS
+      # Top result from isoredirect is the closest one to you
+      BASEURL=`curl -s "http://isoredirect.centos.org/centos/7/isos/x86_64/" | grep -op "http://.*/isos/x86_64" | head -1`
+      MD5SUMSURL="${BASEURL}/md5sum.txt"
+   else
+      ISO=$ISO_UBUNTU
+      BASEURL="http://releases.ubuntu.com/15.04"
+      MD5SUMSURL="${BASEURL}/MD5SUMS"
+   fi
+   EXIST=`curl -sI ${BASEURL}/${ISO} | head -1 | awk '{print $2}'`
+   [[ "$EXIST" == "404" ]] && PrintExit "Error. ${BASEURL}/${ISO} is returning 404 Not Found"
+   MD5=`curl -s $MD5SUMSURL | grep $ISO | awk '{print $1}'`
+   [[ -z "$MD5" ]] && PrintExit "Error trying to get $ISO MD5 from ${MD5SUMSURL}."
+   printf "==> ISOURL: ${BASEURL}/${ISO}\n==> Getting with: curl -LO \$ISOURL. Please wait...\n"
+   curl -LO ${BASEURL}/${ISO}
+   # Confirm download and MD5
+   [[ ! -e $ISO ]] && PrintExit "Seems $ISO was not downloaded correctly."
+   [[ "`md5 $ISO | awk -F'=' '{print $2}' | tr -d ' '`" != "$MD5" ]] && PrintExit "Oh, oh. MD5 sums are different."
+   return 0
+}
+
+getiso_func "$1"
+
+exit 0

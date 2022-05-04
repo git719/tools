@@ -1,0 +1,47 @@
+#!/bin/bash
+# ds-db-dump
+# Dumps 389 Directory Server instance database to standard location and
+# cleans up old dumps in that area.
+
+base_dir=/etc/dirsrv
+inst_id=$1
+retention_period=$2
+[[ -z "$retention_period" ]] && retention_period=7
+pwd_file=${base_dir}/slapd-${inst_id}/pwdfile
+db2bakpl=/usr/sbin/db2bak.pl
+base_bak_dir=/var/lib/dirsrv/slapd-${inst_id}/bak
+
+# Do some error checking
+if [[ -z "$inst_id" ]]; then
+    echo "Usage: $0 <389_ds_instance_id>"
+    exit 1
+fi
+
+if [[ ! -d "${base_dir}/slapd-${inst_id}" ]]; then
+    echo "Error. Missing ${base_dir}/slapd-${inst_id} directory."
+    exit 1
+fi
+
+if [[ ! -r "$pwd_file" && ! -s "$pwd_file" ]]; then
+    echo "Error. File $pwd_file can't be read or is empty."
+    exit 1
+fi
+
+if [[ ! -x "$db2bakpl" ]]; then
+    echo "Error. File $db2bakpl is not executable."
+    exit 1
+fi
+
+echo Dumping DB for 389 Directory Server instance $inst_id ...
+cmd_out=`$db2bakpl -j $pwd_file -Z $inst_id`
+if [[ `echo "${cmd_out}" | grep "Successfully"` ]]; then
+    echo "$cmd_out"
+else
+    echo "$cmd_out"
+    exit 1
+fi
+
+echo Removing dumps older than $retention_period days ...
+find $base_bak_dir -type d -name "${inst_id}*" -mtime +${retention_period} -prune -exec rm -rf {} \;
+
+exit 0

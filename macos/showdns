@@ -1,0 +1,12 @@
+#!/bin/bash
+# showdns
+# Show macOS DNS settings
+
+printf "==> Current DNS settings:\n"
+IF="Wi-Fi"
+sudo networksetup -getdnsservers    "$IF"
+sudo networksetup -getsearchdomains "$IF"
+IF="Thunderbolt Ethernet"
+sudo networksetup -getdnsservers    "$IF"
+sudo networksetup -getsearchdomains "$IF"
+exit 0

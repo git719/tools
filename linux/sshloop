@@ -1,0 +1,14 @@
+#!/bin/bash
+# sshloop
+[[ -z "$1" ]] && echo "Usage: `basename $0` <file-with-list-of-servers>" && exit 1
+
+SSHCMD="ssh -o ConnectTimeout=1 -o BatchMode=yes -o StrictHostKeyChecking=no"
+for S in `cat $1` ; do
+  printf "\n\n\n$S\n"
+  $SSHCMD $S "sudo -i hostname"
+  if [[ "$?" == "0" ]]; then
+    printf "  OK\n"
+  else
+    printf "  SSH Error\n"
+  fi
+done

@@ -1,0 +1,23 @@
+#!/bin/bash
+# rncap
+# Capitalized all filenames in CWD, i.e., "THE last SUpper.jpg" becomes "The Last Supper.Jpg"
+
+MSG="Capitalize every file in CWD? Y/N "
+read -p "$MSG" -n 1 && [[ ! $REPLY =~ ^[Yy]$ ]] && printf "\nAborted.\n" && exit 1
+printf "\n\n"
+
+[[ -z "`which python`" ]] && echo "Error. Requires python!" && exit 1
+
+OS=`uname | tr [A-Z] [a-z]`
+
+for OLDNAME in * ; do
+   NEWNAME=`python -c "import sys ; print sys.argv[1].title()" "$OLDNAME"`
+   # GNU SED version
+   #NEWNAME2=`echo "$OLDNAME/" | sed -r 's/\b\(.\)/\U\1/g'`
+   #NEWNAME2=${NEWNAME2%/}
+   [[ "$OS" = "linux" ]]  && mv -nuv "$OLDNAME" "$NEWNAME" 
+   [[ "$OS" = "darwin" ]] && mv "$OLDNAME" "$NEWNAME" && echo "'$OLDNAME' -> '$NEWNAME'"
+done
+ 
+printf "\n"
+exit 0

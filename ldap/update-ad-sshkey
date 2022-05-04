@@ -1,0 +1,28 @@
+#!/bin/bash
+# update-ad-sshkey 
+
+UpsertKey() {
+  KeyFile=$(mktemp /tmp/key.XXXXXX)
+  trap "{ rm -f $KeyFile ; }" EXIT SIGHUP SIGINT SIGQUIT SIGILL SIGSTOP SIGTERM
+  echo
+  cat > $KeyFile <<EOF
+dn: $2
+changetype: modify
+$1: sshPublicKeys
+sshPublicKeys: $3
+EOF
+  printf "\n$(cat $KeyFile)\n\n"
+  ldapmodify -H ldaps://ldap.mydomain.com -D "myorg\user1a" -f $KeyFile -v
+  sleep 1
+}
+
+if [[ $# != "3" ]]; then
+  echo "Usage: $(basename $0) add|replace \"DN\" \"ssPublicKey\""
+  exit 1
+fi
+
+UpdateType="$1"
+Dn="$2"   # Sample DN: "CN=Lastname\, First,OU=MyOrg,OU=NY Users,OU=My Company Users,DC=mydomain,DC=com"
+Key="$3" 
+
+UpsertKey "$UpdateType" "$Dn" "$Key"

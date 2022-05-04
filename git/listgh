@@ -1,0 +1,13 @@
+#!/bin/bash
+# listgh
+# List github.com repos
+
+set -euo pipefail
+Header="Authorization: token ${TOKEN_GHP_00}"
+URL="https://api.github.com/user/repos?&per_page=100"
+List=$(curl -s -H "$Header" "$URL" | jq -r '.[]|.ssh_url')
+for Repo in $List ; do
+  echo ${Repo%.*} 
+  #[[ "$(echo $Repo | grep _)" ]] && git clone $Repo
+done
+exit 0

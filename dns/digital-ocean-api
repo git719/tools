@@ -1,0 +1,38 @@
+#!/bin/bash
+# digital-ocean-api
+# DigitalOcean API Caller
+
+# https://docs.digitalocean.com/reference/api/api-reference/
+
+set -euo pipefail
+[[ -z $TOKENDO01 ]] && printf "Variable TOKENDO01 empty!" && exit 1
+
+ns_ls() {  # List all records
+    curl -sX GET \
+        -H "Content-Type: application/json" \
+        -H "Authorization: Bearer $TOKENDO01" \
+        "https://api.digitalocean.com/v2/domains/$1/records"
+}
+
+ns_create() {  # Create A record
+    DOMAIN=$1
+    A=$2
+    IP=$3
+    TTL=${4-600}
+    curl -sX POST \
+        -H "Content-Type: application/json" \
+        -H "Authorization: Bearer $TOKENDO01" \
+        -d '{"type":"A","name":"'$A'","data":"'$IP'","priority":null,"port":null,"ttl":'$TTL',"weight":null,"flags":null,"tag":null}' \
+           "https://api.digitalocean.com/v2/domains/$DOMAIN/records"
+}
+
+if [[ $1 == "ls" ]]; then
+    ns_ls tek.uno | jq
+elif [[ $1 == "create" ]]; then
+    #ns_create tek.uno np28 10.10.9.28 | jq
+    #ns_create tek.uno np27 10.10.9.27 | jq
+    #ns_create tek.uno np30 10.10.9.30 | jq
+    ns_create tek.uno np77 10.10.9.77 | jq
+else
+    echo "Nothing requested"
+fi

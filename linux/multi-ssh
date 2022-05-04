@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# multi-ssh
+
+HOSTS=$*
+if [ -z "$HOSTS" ]; then
+  echo -n "You need to supply ips"
+  return
+fi
+
+hosts=( $HOSTS )
+target="ssh-multi ${host[0]}"
+
+session_name=$(uuidgen)
+tmux new -d -s "${session_name}"
+
+tmux new-window -n "${target}" "export ME=${hosts[0]}; ssh -o ConnectTimeout=2 -o ConnectionAttempts=2 ${hosts[0]} && bash"
+unset hosts[0];
+for i in "${hosts[@]}"; do
+  tmux split-window -t :"${target}" -h  "export ME=${i}; ssh -o ConnectTimeout=2 -o ConnectionAttempts=2 $i && bash"
+  tmux select-layout -t :"${target}" tiled > /dev/null
+done
+
+tmux set-window-option -t :"${target}"  synchronize-panes on > /dev/null
+tmux attach-session -t "${session_name}"

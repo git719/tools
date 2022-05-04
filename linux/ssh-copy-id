@@ -1,0 +1,4 @@
+#!/bin/bash
+[[ x"$1" == x"" ]] && printf "\nUsage: ssh-copy-id <user@host>\n\n" && exit 1
+[[ ! -f $HOME/.ssh/id_rsa ]] && echo "No key found. Generating one." && ssh-keygen -b 2048 -N "" -f $HOME/.ssh/id_rsa 
+ssh-keygen -y -f $HOME/.ssh/id_rsa | ssh $1 "umask 077; mkdir -p .ssh ; cat >> .ssh/authorized_keys"

@@ -1,0 +1,32 @@
+#!/bin/bash
+# setdnshome
+
+IF="Wi-Fi"
+printf "==> Updating '$IF' interface DNS settings:\n"
+printf "BEFORE ============\n"
+sudo networksetup -getdnsservers    "$IF"
+sudo networksetup -getsearchdomains "$IF"
+
+sudo networksetup -setdnsservers    "$IF" 8.8.8.8 8.8.4.4
+sudo networksetup -setsearchdomains "$IF" Empty
+sudo killall -HUP mDNSResponder
+
+printf "AFTER =============\n"
+sudo networksetup -getdnsservers    "$IF"
+sudo networksetup -getsearchdomains "$IF"
+
+IF="Thunderbolt Ethernet"
+printf "==> Updating '$IF' interface DNS settings:\n"
+printf "BEFORE ============\n"
+sudo networksetup -getdnsservers    "$IF"
+sudo networksetup -getsearchdomains "$IF"
+
+sudo networksetup -setdnsservers    "$IF" 8.8.8.8 8.8.4.4
+sudo networksetup -setsearchdomains "$IF" Empty
+sudo killall -HUP mDNSResponder
+
+printf "AFTER =============\n"
+sudo networksetup -getdnsservers    "$IF"
+sudo networksetup -getsearchdomains "$IF"
+
+exit 0

@@ -1,0 +1,15 @@
+#!/bin/bash
+# convert2main2
+# Step 2 in converting to 'main'
+
+#set -euo pipefail
+for r in `ls -1` ; do
+  if [[ -d "$r/.git" ]]; then
+    (
+      printf "%-20s" "$r"
+      cd $r
+      git push origin --delete master
+      printf "\n"
+    )
+  fi
+done

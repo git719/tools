@@ -1,0 +1,16 @@
+#!/bin/bash
+# dl
+# Simple youtube-dl stub driver
+# Make sure you: brew install youtube-dl
+
+[[ "$#" -ne 2 ]] && printf "Usage: $0 NAME \"URL\"\n" && exit
+F="$1"
+U="$2"
+E=`echo ${F##*.} | awk '{print tolower($0)}'` # Extension in lowercase
+
+# Insert missing MP4 extension?
+[[ "mp4" != *"$E"* ]] &&  F="${F}.mp4"
+
+youtube-dl -o "$F" "$U"
+
+exit 0

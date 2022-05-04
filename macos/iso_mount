@@ -1,0 +1,68 @@
+#!/usr/bin/env python
+# mount_iso 
+
+import os
+import shutil
+import subprocess
+import sys
+
+def mountISO(isoFile, isoMount):
+  # Evidently, this is the only way to mount a hybrid ISO on macos:
+  # 1. Capture last mounted disk device (/dev/disk1, etc)
+  # 2. Attach the ISO. Should attach to next available device.
+  # 3. Ensure mounted device is new, NOT the previous one
+  # 4. Mount the last device to specified mount point
+  lastDisk1 = lastDisk2 = None
+  lastMounted = "diskutil list | awk '/^\/dev\/disk/ {print $1}' | sort | tail -1"
+  lastDisk1 = subprocess.check_output(lastMounted, shell=True).rstrip('\r\n')
+  attachISO = "hdiutil attach -quiet -noverify -nomount \"{}\" 2>&1".format(isoFile)
+  if subprocess.call(attachISO, shell=True) != 0:
+    print("Error running: {}".format(attachISO))
+    return ""
+  lastDisk2 = subprocess.check_output(lastMounted, shell=True).rstrip('\r\n')
+  if lastDisk1 == None or lastDisk1 == lastDisk2:
+    print("Error with 2nd run of: {}".format(lastMounted))
+    return ""
+  mountISO = "mount_cd9660 {} \"{}\"".format(lastDisk2, isoMount)
+  if subprocess.call(mountISO, shell=True) != 0:
+    print("Error running: {}".format(mountISO))
+    return ""
+  return lastDisk2
+
+
+def main(args=None):
+
+  # No specific directory given, so try mounting on filename dir (sans .ISO extension)
+  if len(sys.argv) == 2:
+    isoFile = sys.argv[1]
+    if not isoFile.lower().endswith('.iso'):
+      print("File {} ain't no ISO file!".format(isoFile));
+      sys.exit(1)
+    isoMount = os.path.basename(isoFile)[:-4]
+    if os.path.isdir(isoMount):
+      if os.listdir(isoMount):
+        print("Dir {} is not empty!".format(isoMount))
+        sys.exit(1)
+    else:
+      os.makedirs(isoMount)
+    mountISO(isoFile, isoMount)
+  elif len(sys.argv) == 3:
+  # Two args given, let's assume it's ISO filename and dir to mount to
+    isoFile = sys.argv[1]
+    if not isoFile.lower().endswith('.iso'):
+      print("File {} ain't no ISO file!".format(isoFile));
+      sys.exit(1)
+    isoMount = sys.argv[2]
+    if os.path.isdir(isoMount):
+      if os.listdir(isoMount):
+        print("Dir {} is not empty!".format(isoMount))
+        sys.exit(1)
+    else:
+      os.makedirs(isoMount)
+    mountISO(isoFile, isoMount)
+  else:
+    print("Sausage: {} <ISOfile> [mountPoint]".format(os.path.basename(sys.argv[0])))
+
+
+if __name__ == '__main__':
+  main()

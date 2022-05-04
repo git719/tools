@@ -1,0 +1,14 @@
+#!/bin/bash
+# firefoxbackup
+
+ProfDir="/Users/$USER/Library/Application Support/Firefox/Profiles/"
+osascript -e 'quit app "Firefox"'
+sleep 3
+
+cd "$ProfDir"
+
+DefaultProf=$(ls -ltra | awk '/^d.*default*/ {print $(NF)}')
+if [[ $DefaultProf ]]; then
+   tar czf $HOME/data/etc/firefox-profile-backup.tgz $DefaultProf
+   ls -ltra $HOME/data/etc/firefox-profile-backup.tgz
+fi

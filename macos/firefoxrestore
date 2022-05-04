@@ -1,0 +1,25 @@
+#!/bin/bash
+# firefoxrestore
+
+osascript -e 'quit app "Firefox"'
+sleep 3
+
+TempDir=$(mktemp -d -t firefox)
+tar xf $HOME/data/etc/firefox-profile-backup.tgz -C $TempDir
+cd $TempDir
+SourceDir=$(ls -ltra | awk '/^d.*default*/ {print $(NF)}')
+SourceDir="$TempDir/$SourceDir"
+
+ProfDir="/Users/$USER/Library/Application Support/Firefox/Profiles/"
+cd "$ProfDir"
+TargetDir=$(ls -ltra | awk '/^d.*default*/ {print $(NF)}')
+if [[ $TargetDir ]]; then
+   tar czf $TargetDir.tgz $TargetDir
+   rm -rf $TargetDir/*
+   rsync -av $SourceDir/ $TargetDir/
+fi
+rm -rf $TempDir
+echo Done
+
+# Maybe do a version check
+#/Applications/Firefox.app/Contents/MacOS/firefox -v

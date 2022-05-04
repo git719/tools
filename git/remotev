@@ -1,0 +1,18 @@
+#!/bin/bash
+# remotev
+# List all remote sources
+
+set -euo pipefail
+for r in `ls -d */` ; do
+  r=${r%?}
+  if [[ -d "$r/.git" ]]; then
+    (
+    printf "==> $r\n"
+    cd $r
+    git remote -v
+    printf "\n"
+    )
+  else
+    printf "==> $r NOT A REPO\n\n"
+  fi
+done

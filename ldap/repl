@@ -1,0 +1,182 @@
+#!/bin/bash
+# repl
+# Use this script to create, initialize, delete, status, stop, or start your own
+# special 389 Directory Server replication agreement (RA). Generally there could
+# be multiple RAs defined per 389 DS instance, but this script is designed to
+# only support this one 2-server multi-master RA defined below.
+
+# ==== Modify these values accordingly =========================================
+inst_id="ldap1"
+ra_id="1"
+ra_host="ldap2.mydomain.com"
+ra_desc="Replication agreement between this node and ldap2"
+ra_name="ReplicationAgreement"
+ra_suffix="dc\=mydomain\,dc\=com"  # Note the required escaped characters
+ra_port="636"                      # 636 or 389
+ra_transport=SSL                   # SSL or LDAP
+# ==============================================================================
+ra_replica="cn=replica,cn=${ra_suffix},cn=mapping tree,cn=config"
+ra_full="cn=${ra_name},cn=replica,cn=${ra_suffix},cn=mapping tree,cn=config"
+pwd_file=./pwdfile      # Make sure there's no trailing \n\r on this file
+
+# Create scratch directory that's cleaned up on exit
+tmp_dir=$(mktemp -d -t tmp.XXXXXX)
+cleanup_on_exit() {
+    rm -rf "$tmp_dir"
+}
+trap cleanup_on_exit EXIT
+
+tmp_file=$tmp_dir/ldap
+
+if [[ ! -r "$pwd_file" || ! -s "$pwd_file" ]]; then
+    echo "Error. File $pwd_file cannot be read, is empty, or missing."
+    exit 1
+fi
+
+confirm_prompt() {
+    msg="Are you sure you want to $1? Y/N "
+    read -p "$msg" -n 1 && [[ ! $REPLY =~ ^[Yy]$ ]] && printf "\nAborted.\n" && exit 1
+}
+
+toggle_repl() {
+    echo
+    cat > $tmp_file <<EOF
+dn: $ra_full
+changetype: modify
+replace: nsds5ReplicaEnabled
+nsds5ReplicaEnabled: $1
+EOF
+    ldapmodify -D "cn=Directory Manager" -h localhost -y $pwd_file -f $tmp_file -v
+    sleep 1
+}
+
+delete_dn() {
+    echo
+    cat > $tmp_file <<EOF
+dn: $1
+changetype: delete
+EOF
+    ldapmodify -D "cn=Directory Manager" -h localhost -y $pwd_file -f $tmp_file -v
+    sleep 1
+}
+
+if [[ ! $1 =~ ^(status|stop|start|create|init|delete)$ ]]; then
+    echo "$0 [status|stop|start|create|init|delete]"
+    exit 0
+fi
+
+if [[ $1 == "status" ]]; then
+    ldapsearch -D "cn=Directory Manager" -h localhost -y $pwd_file -b "cn=changelog5,cn=config" -LLLo ldif-wrap=no
+    ldapsearch -D "cn=Directory Manager" -h localhost -y $pwd_file -b "cn=replication manager,cn=config" -LLLo ldif-wrap=no
+    ldapsearch -D "cn=Directory Manager" -h localhost -y $pwd_file -b "cn=mapping tree,cn=config" -LLLo ldif-wrap=no
+    exit 0
+fi
+
+if [[ $1 == "stop" ]]; then
+    confirm_prompt "stop replication"
+    toggle_repl off
+fi
+
+if [[ $1 == "start" ]]; then
+    confirm_prompt "start replication"
+    toggle_repl on
+fi
+
+if [[ $1 == "create" ]]; then
+    confirm_prompt "create replication agreement"
+    echo
+
+    # Create supplier bind DN
+    cat > $tmp_file <<EOF
+dn: cn=replication manager,cn=config
+changetype: add
+objectClass: inetorgperson
+objectClass: person
+objectClass: top
+objectClass: organizationalPerson
+cn: Replication Manager
+sn: RM
+userPassword: `cat $pwd_file`
+passwordExpirationTime: 20380119031407Z
+nsIdleTimeout: 0
+EOF
+    ldapmodify -D "cn=Directory Manager" -h localhost -y $pwd_file -f $tmp_file -v
+    sleep 1
+
+    # Create changelog entry
+    cat > $tmp_file <<EOF
+dn: cn=changelog5,cn=config
+changetype: add
+objectclass: top
+objectclass: extensibleObject
+cn: changelog5
+nsslapd-changelogdir: /var/lib/dirsrv/slapd-${inst_id}/changelogdb
+nsslapd-changelogmaxage: 10d
+EOF
+    ldapmodify -D "cn=Directory Manager" -h localhost -y $pwd_file -f $tmp_file -v
+    sleep 1
+
+    # Create supplier replica
+    ra_suffix=`echo "$ra_suffix" | tr -d '\\' 2> /dev/null`  # nsds5replicaroot does't accept the escapes
+    cat > $tmp_file <<EOF
+dn: $ra_replica
+changetype: add
+objectclass: top
+objectclass: nsds5replica
+objectclass: extensibleObject
+cn: replica
+nsds5replicaroot: $ra_suffix
+nsds5replicaid: $ra_id
+nsds5replicatype: 3
+nsds5flags: 1
+nsds5ReplicaPurgeDelay: 604800
+nsds5ReplicaBindDN: cn=replication manager,cn=config
+EOF
+    ldapmodify -D "cn=Directory Manager" -h localhost -y $pwd_file -f $tmp_file -v
+    sleep 1
+
+    # Create replication agreement
+    cat > $tmp_file <<EOF
+dn: $ra_full
+changetype: add
+objectclass: top
+objectclass: nsds5ReplicationAgreement
+cn: ReplicationAgreement
+nsds5replicahost: $ra_host
+nsds5replicaport: $ra_port
+nsds5ReplicaTransportInfo: $ra_transport
+nsds5ReplicaBindDN: cn=replication manager,cn=config
+nsds5replicabindmethod: SIMPLE
+nsds5replicaroot: $ra_suffix
+nsds5ReplicaEnabled: off
+description: $ra_desc
+nsds5replicatedattributelist: (objectclass=*) $ EXCLUDE authorityRevocationList accountUnlockTime memberof
+nsDS5ReplicatedAttributeListTotal: (objectclass=*) $ EXCLUDE accountUnlockTime
+nsds5replicacredentials: `cat $pwd_file`
+EOF
+    ldapmodify -D "cn=Directory Manager" -h localhost -y $pwd_file -f $tmp_file -v
+    sleep 1
+fi
+
+if [[ $1 == "init" ]]; then
+    confirm_prompt "initialize replication agreement"
+    echo
+    cat > $tmp_file <<EOF
+dn: $ra_full
+changetype: modify
+replace: nsds5BeginReplicaRefresh
+nsds5BeginReplicaRefresh: start
+EOF
+    ldapmodify -D "cn=Directory Manager" -h localhost -y $pwd_file -f $tmp_file -v
+    sleep 1
+fi
+
+if [[ $1 == "delete" ]]; then
+    confirm_prompt "delete replication agreement"
+    delete_dn "$ra_full"
+    delete_dn "$ra_replica"
+    delete_dn "cn=changelog5,cn=config"
+    delete_dn "cn=replication manager,cn=config"
+fi
+
+exit 0

@@ -1,0 +1,26 @@
+#!/bin/bash
+# genselfcert
+# Generate a standard 10 year self-signed SSL cert. Also creates a CSR that can
+# be used to purchase a proper cert from CAs such as Entrust, Verisign, etc.
+
+FQDN=$1
+[[ -z "$FQDN" ]] && printf "Usage: $0 <common-name>\n" && exit 1
+
+# Required company cert info
+COUNTRY="US"
+STATE="NY"
+LOC="New York"
+ORG="My Company"
+UNIT="My Company"
+printf "\nCOUNTRY=$COUNTRY   STATE=$STATE  LOC=$LOC   ORG=$ORG   UNIT=$UNIT   DOMAIN=${FQDN}\n\n"
+
+MSG="Proceed to create 1) a private key, 2) a 10-year self-signed cert, and 3) a CSR for domain '$FQDN'? Y/N "
+read -p "$MSG" -n 1 && [[ ! $REPLY =~ ^[Yy]$ ]] && printf "\nAborted.\n" && exit 1
+
+printf "\nGenerating private key, self-signed cert, and CSR ...\n\n"
+
+openssl req -nodes -newkey rsa:2048 -keyout ${FQDN}.key -out ${FQDN}.csr -subj "/C=${COUNTRY}/ST=${STATE}/L=${LOC}/O=${ORG}/OU=${UNIT}/CN=${FQDN}"
+openssl x509 -req -days 3650 -in ${FQDN}.csr -signkey ${FQDN}.key -out ${FQDN}.crt
+
+printf "\n1) Now you can use below self-signed cert + private key,\n2) Or use below CSR to acquire a cert from a proper CA like Entrust, Verisign\n\n"
+printf "\n${FQDN}.crt\n${FQDN}.key\n${FQDN}.csr\n\n"

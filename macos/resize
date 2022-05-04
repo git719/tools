@@ -1,0 +1,16 @@
+#!/bin/bash
+# resize
+# Resize given HEIC|JPEG|JPG image file by 10%
+
+F=$1       # Full filename
+N=${F%.*}  # Base name
+E=`echo ${F##*.} | awk '{print tolower($0)}'` # Extension in lowercase
+
+if [[ $F && "heic jpeg jpg" == *"$E"* ]]; then
+  DateStr="$(date +%Y%m%d)a"
+  sips -s format jpeg -s formatOptions 10 $F -o ${N}_${DateStr}.jpg
+else
+  printf "usage: resize FILE.[heic|jpeg|jpg]\n"
+fi
+
+exit 0

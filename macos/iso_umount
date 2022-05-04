@@ -1,0 +1,36 @@
+#!/usr/bin/env python
+# umount_iso 
+
+import os
+import shutil
+import subprocess
+import sys
+
+def unmountISO(isoMount, device):
+  # The only evident way to unmount a hybrid ISO on macos requires these 2 commands:
+  umountISO = "umount \"{}\" ; diskutil eject {} > /dev/null 2>&1".format(isoMount, device)
+  if subprocess.call(umountISO, shell=True) != 0:
+    print("Error unmounting \"{}\"".format(isoFile))
+    return 1
+  return 0
+
+
+def main(args=None):
+  if len(sys.argv) == 2:
+    isoMount = sys.argv[1]
+    if os.path.isdir(isoMount):      # If it's a directory
+      getDev = "df -h | grep '%s' | awk '{print $1}'" % os.path.abspath(isoMount)
+      device = subprocess.check_output(getDev, shell=True).rstrip('\r\n')
+      if not device:
+        print("No device mounted on directory '{}'.".format(isoMount))
+        sys.exit(1)
+      unmountISO(isoMount, device)
+    else:
+      print("So, {} is not a directory, and probably not a mount point.".format(isoMount))
+      sys.exit(1)
+  else:
+    print("Sausage: {} <mountPoint>".format(os.path.basename(sys.argv[0])))
+  
+
+if __name__ == '__main__':
+  main()

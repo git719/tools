@@ -1,0 +1,91 @@
+#!/usr/bin/env python3
+# godns
+# GoDaddy DNS API Python play script using GoDaddyPy module.
+# See https://developer.godaddy.com/getstarted
+# Note there are two types of key/secret pairs: One for DEV (https://api.ote-godaddy.com)
+# and another for PROD (https://api.godaddy.com)
+
+import os
+import sys
+import json
+try:
+    from godaddypy import Client, Account
+except ImportError as e:
+    print("%s. Do: pip install godaddypy" % str(e))
+    sys.exit(1)
+
+
+def print_json(r):
+    print(json.dumps(r, indent=2))
+
+
+# ==== MAIN ==============================================================
+try:
+    api_key = os.environ["GDKEY01"]
+    api_secret = os.environ["GDSEC01"]
+    #delegated_id = os.environ["GDDELEGATEID"]  # Only if you're using delegated clients
+except Exception as e:
+    print("Missing environment variables:", str(e))
+    sys.exit(1)
+
+# Reference https://pypi.org/project/GoDaddyPy/
+my_acct = Account(api_key=api_key, api_secret=api_secret)
+client = Client(my_acct)
+# If you're using delegated clients
+# delegate_acct = Account(api_key=api_key, api_secret=api_secret, delegate=delegated_id)
+# delegate_client = Client(delegate_acct)
+
+# ==== EXAMPLES ====
+
+# 1. List all domains
+# r = client.get_domains() ; print_json(r)
+
+# 2. Get details for all domains
+# for d in client.get_domains():
+#     r = client.get_domain_info(d)
+#     if r['status'].lower() == 'active':
+#         print("==== %s =========================" % (d.upper()))
+#         print_json(r)
+
+# 3. List a) all details for mydomain or b) only its name servers
+mydomain = 'mydomain.com'
+r = client.get_domain_info(mydomain)
+# print_json(r)
+print_json(r['nameServers'])
+
+# 4. Update my domain to use a) Azure DNS name servers or b) Digital Ocean ones.
+#    Note this is actually a Registrar operation not strictly a DNS Zone one.
+#    Note this can also take a few minutes to take effect.
+# name_servers = {
+#     "nameServers": [
+#         # Does not accept trailing dots on these FQDN entries
+#         "ns1-33.azure-dns.com",
+#         "ns2-33.azure-dns.net",
+#         "ns3-33.azure-dns.org",
+#         "ns4-33.azure-dns.info"
+#     ]
+# }
+# name_servers = {
+#     "nameServers": [
+#         "ns1.digitalocean.com",
+#         "ns2.digitalocean.com",
+#         "ns3.digitalocean.com"
+#     ]
+# }
+# try:
+#     r = client.update_domain(mydomain, **name_servers)
+# except Exception as e:
+#     print(str(e))
+#     sys.exit(1)
+# r = client.get_domain_info(mydomain)
+# print_json(r['nameServers'])
+
+# 5. Others
+# r = client.get_records('domain1.example', record_type='A')
+# r = client.update_ip('2.2.2.2', domains=['domain1.example'])
+# r = client.get_records('domain1.example')
+# r = client.get_records('apple.com', record_type='A', name='@')
+# r = client.update_record_ip('3.3.3.3', 'domain1.example', 'dynamic', 'A')
+# r = client.add_record('apple.com', {'data':'1.2.3.4','name':'test','ttl':3600, 'type':'A'})
+# r = client.delete_records('apple.com', name='test')
+# print_json(r)

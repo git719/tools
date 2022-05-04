@@ -1,0 +1,7 @@
+#!/bin/bash
+# con: Alternative to SSH, with run/terminate and sudo
+[[ ! "$1" ]] && printf "Usage: `basename $0` <hostname>\n" && exit 1
+[[ "$2" ]] && printf -v CMD "%q" "sudo -i $2" ||  printf -v CMD "%q" "sudo -i"
+#DEBUG echo "[$CMD]"
+ssh -t "$1" "exec bash -c $CMD"
+exit 0

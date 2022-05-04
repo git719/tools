@@ -1,0 +1,12 @@
+#!/bin/bash
+# mkv2mp4
+[[ "`which ffmpeg`" == "" ]] && printf "No 'ffmpeg' binary installed.\n" && exit 1
+Msg="Convert every MKV file to MP4 in current directory? Y/N "
+read -p "$Msg" -n 1 && [[ ! $REPLY =~ ^[Yy]$ ]] && printf "\nAborted.\n" && exit 1
+echo
+for F in `ls *.mkv` ; do
+  F="${F%.*}"
+  ffmpeg -i "${F}.mkv" -c:v copy -c:a copy "${F}.mp4"
+  rm "${F}.mkv" 
+done
+exit 0

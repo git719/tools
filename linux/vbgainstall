@@ -1,0 +1,20 @@
+#!/bin/bash
+# vbgainstall
+# VirtualBox GuestAdditions installer
+VER=$1
+[[ -z "$VER" ]] && VER="4.3.10"
+printf "==> Installing VirtualBox GuestAdditions $VER\n"
+ISO=VBoxGuestAdditions_${VER}.iso
+ISOURL=http://download.virtualbox.org/virtualbox/${VER}/${ISO}
+printf "==> Installing other required packages first\n"
+PKGINSTALL="yum -y install kernel-devel"
+[[ ! -f "/etc/redhat-release" ]] && PKGINSTALL="apt-get -y install"
+$PKGINSTALL gcc make dkms
+printf "==> Downloading $ISO\n"
+curl -LO $ISOURL
+[[ ! -f "$ISO" ]] && printf "==> Error with $ISO\n" && exit 1
+[[ ! -d /media/dvd ]] && mkdir /media/dvd
+mount -t iso9660 -o loop $ISO /media/dvd
+/media/dvd/VBoxLinuxAdditions.run
+umount /media/dvd
+exit 0

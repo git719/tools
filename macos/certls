@@ -1,0 +1,38 @@
+#!/bin/bash
+# certls
+# Print SSL certificate details for given FDQN:Port
+
+set -euo pipefail  # Deliberately fail if any errors, as with other languages
+
+if [[ -z "$(which openssl)" ]]; then
+    printf "Missing 'openssl' binary\n"
+    exit 1
+fi
+
+function print_usage {
+    printf "Usage: $(basename $0) FQDN[:PORT]\n"
+    printf "  Examples:\n"
+    printf "    $(basename $0) microsoft.com     Uses 443 by default\n"
+    printf "    $(basename $0) mysite.com:1473   Uses port 1473\n"
+    exit 1
+}
+
+[[ $# -lt 1 || $# -gt 1 ]] && print_usage
+SITE=$1
+FQDN=${SITE%%:*} 
+Port=${SITE##*:}
+[[ "$Port" == "$SITE" ]] && Port=443  # Default to port 443
+#printf "DEBUG       : [$FQDN][$Port]\n"
+if [[ -z "$FQDN" || -z "$(echo $Port | grep '^[[:digit:]]*$')" ]]; then
+    print_usage
+fi
+
+printf "OpenSSL Ver : $(openssl version)\n"
+printf "\nFQDN:Port   : $FQDN:$Port\n"
+printf "\nEXPIRY\n"
+DETAILS="$(echo -n | openssl s_client -connect $FQDN:$Port 2>/dev/null)"
+echo "$DETAILS" | openssl x509 -noout -dates
+printf "\nLIST\n"
+echo "$DETAILS" | openssl x509 -noout -text | grep DNS: | tr -d ' DNS:' | tr ',' '\n'
+
+exit 0

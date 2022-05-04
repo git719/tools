@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+# fastly
+
+import os, sys, json
+try:
+  import requests
+except:
+  print "Missing 'requests' module. Do: sudo pip install requests"
+  sys.exit(1)
+
+prgVer  = 'v1.0.0'
+prgName = os.path.basename(sys.argv[0])
+
+FastlyAPIKey = os.environ.get('FASTLY_API_KEY')
+if FastlyAPIKey == None:
+  print "FASTLY_API_KEY environment variable is undefined."
+  sys.exit(1)
+
+def PrintUsage ():
+  print "Fastly API wrapper " + prgVer + "\nUSAGE\n" + \
+        prgName + " PATH          Does a GET of a specific Fastly API path\n" + \
+        prgName + " DELETE PATH   Delete resource at given path"
+  sys.exit(1)
+
+args = len(sys.argv) - 1
+if args < 1 or args > 2:
+  PrintUsage()
+
+Headers = {'Fastly-Key' : FastlyAPIKey, 'Content-Accept' : 'application/json'}
+APIURL = 'https://api.fastly.com'
+
+if args == 1:
+  #Payload = {'title': 'value1', 'name': 'value2'}
+  #response = requests.get(BaseUrl+sys.argv[1], data=Payload, headers=Headers)
+  response = requests.get(APIURL+sys.argv[1], headers=Headers)
+else:
+  response = requests.delete(APIURL+sys.argv[2], headers=Headers)
+
+# Pretty print JSON response
+print json.dumps(response.json(), sort_keys=True, indent=2, separators=(',', ': '))
+sys.exit(0)

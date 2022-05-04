@@ -1,0 +1,8 @@
+#!/bin/bash
+# csv2txt
+
+[[ ! -f "$1" ]] && echo "Can't find file" && exit 1
+
+SEP=","
+REP=" | "
+cat $1 | sed -e "s/$SEP/$REP/g" -e 's/^/| /' -e 's/$/ |/'

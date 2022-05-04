@@ -1,0 +1,15 @@
+#!/bin/bash
+# convert2main1
+# Step 1 in converting all your local repos from primary 'master' to 'main'
+
+set -euo pipefail
+for r in `ls -1` ; do
+  if [[ -d "$r/.git" ]]; then
+    (
+      printf "%-20s" "$r"
+      cd $r
+      git branch -m master main && git push -u origin main
+      printf "\n"
+    )
+  fi
+done

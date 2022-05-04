@@ -1,0 +1,25 @@
+#!/bin/bash
+# rn
+[[ "$#" != "2" ]] && printf "Bulk file re-namer v1.7.3\nUsage: `basename $0` <oldstring> <newstring>\n" && exit 1
+OSTYPE=`uname | tr [A-Z] [a-z]`
+echo ""
+OLDSTR=$1 ; NEWSTR=$2
+OLDIFS="$IFS"
+IFS=$'\n'
+COUNT=0
+for OLDFILE in `ls -1` ; do
+   MATCH=`echo "$OLDFILE" | grep -c -e "$OLDSTR"`
+   if [[ ! "$MATCH" == "0" ]]; then
+      COUNT=1
+      NEWFILE=`echo "$OLDFILE" | sed "s/$OLDSTR/$NEWSTR/"`
+      if [[ "$OSTYPE" = "linux" ]]; then
+         mv -nuv ./"$OLDFILE" ./"$NEWFILE" 
+      else
+         mv ./"$OLDFILE" ./"$NEWFILE" && echo "\"$OLDFILE\" -> \"$NEWFILE\"" 
+      fi
+   fi
+done
+IFS="$OLDIFS"
+[[ "$COUNT" == "0" ]] && printf "No filename has string '$OLDSTR'.\n\n" && exit 1
+echo ""
+exit 0

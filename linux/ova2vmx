@@ -1,0 +1,24 @@
+#!/bin/bash
+# ova2esx
+TAR=/usr/bin/tar 
+CONV=/Users/lcapella/data/bin/conv2vmx-ovf.py
+[[ ! "$1" ]] && printf "Usage: `basename $0` <OVA filename>\n" && exit 1
+OVA=$1
+OVADIR=`dirname $1`
+OVAOLD=`basename $1`
+[[ "`echo ${OVAOLD##*.} | tr [A-Z] [a-z]`" != "ova" ]] && printf "Error. File needs an .ova extension.\n" && exit 1
+OVANEW="${OVAOLD%.*}_esx.ova"
+
+mkdir temp$$
+cd temp$$
+$TAR xvf ../$OVA
+$CONV ${OVAOLD%.*}.ovf
+mv vmx_${OVAOLD%.*}.ovf ${OVAOLD%.*}.ovf
+chmod 644 *
+$TAR cvf ../$OVANEW *
+cd ..
+rm -rf temp$$
+
+echo Done.
+
+exit 0

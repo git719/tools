@@ -1,0 +1,12 @@
+#!/bin/bash
+# createuser
+[[ "$#" != "1" ]] && echo "Usage: createuser <username>" && exit 1
+Username=$1
+[[ -n "`id -u $Username 2>/dev/null`" ]] && echo "Error. User '$Username' already exists." && exit 1
+[[ "`grep -hci ubuntu /etc/*-release | tail -1`" == "0" ]] && PwdOption="-fu" || PwdOption="-u"
+useradd -c "$Username" -d /home/$Username -m -s /bin/bash $Username
+passwd $PwdOption $Username
+[[ ! -d /home/$Username/.ssh ]] && mkdir /home/$Username/.ssh
+chmod 700 /home/$Username/.ssh
+chown -R $Username:$Username /home/$Username
+exit 0

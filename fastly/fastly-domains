@@ -1,0 +1,26 @@
+#!/usr/bin/env python
+# fastly-domains
+
+import os, sys
+try:
+  import fastly
+except:
+  print "Missing 'fastly' module. git clone git@github.com:zebrafishlabs/fastly-python; " \
+        "cd fastly-python; sudo python setup.py install"
+  sys.exit(1)
+
+FastlyAPIKey = os.environ.get('FASTLY_API_KEY')
+if FastlyAPIKey == None:
+  print "FASTLY_API_KEY environment variable is undefined."
+  sys.exit(1)
+
+client = fastly.connect(FastlyAPIKey)
+
+services = client.list_services()
+for svc in services:
+  svcid   = svc._data.get('id', None)          # Is avail with svc.id
+  svcname = svc._data.get('name', None)        # Is avail with svc.id
+  svcver  = svc._data.get('version', None)     # Should just be avail with svc.id. Current bug.
+  svcmod  = svc._data.get('updated_at', None)  # Should just be avail with svc.id. Current bug.
+  for d in client.list_domains(svcid, svcver):
+    print "%-26s  %-40s  %s" % (svcid, svcname, d.name)
