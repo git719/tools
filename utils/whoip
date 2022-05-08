@@ -1,0 +1,42 @@
+#!/usr/bin/env python
+# whoip
+
+import subprocess
+import json
+import sys
+
+def valid_ip(ip):
+    import socket             # Ask socket module if string is a valid IP address
+    try:
+        socket.inet_aton(ip)  # IP format is correct
+        return True
+    except socket.error:      # Not correct
+        return False
+
+def str_val(x, attrib):
+    # Return the best string value for given attribute within object x
+    if attrib in x and x[attrib]:
+        return x[attrib]
+    return "-" # Blank if nil
+
+# ==== MAIN 
+try:
+    subprocess.check_output("ipinfo")
+except Exception as e:
+    print("Missing 'ipinfo' binary. Aborting. See https://github.com/ipinfo/cli")
+    sys.exit(1)
+
+netstat_output = subprocess.getoutput(("netstat -an | grep ESTABLISHED | awk '{print $5}' | sort -u"))
+for entry in netstat_output.split('\n'):
+    ext = '.'+entry.split('.')[-1] # port
+    ip = entry[:-len(ext)]         # IP = without port
+    if valid_ip(ip):
+        # Use ipinfo.io CLI tool to find whose IP this is
+        result = subprocess.check_output(["ipinfo", ip, "-j"], encoding='utf-8')
+        r = json.loads(result)
+        hostname = str_val(r, "hostname")
+        city = str_val(r, "city")
+        region = str_val(r, "region")
+        loc = str_val(r, "loc")
+        org = str_val(r, "org")
+        print("%-14s  %-50s  %-20s  %-18s  %-18s  %s" %(ip, hostname, city, region, loc, org))
