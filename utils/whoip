@@ -39,4 +39,4 @@ for entry in netstat_output.split('\n'):
         region = str_val(r, "region")
         loc = str_val(r, "loc")
         org = str_val(r, "org")
-        print("%-14s  %-50s  %-20s  %-18s  %-18s  %s" %(ip, hostname, city, region, loc, org))
+        print("%-16s %-50s %-20s %-18s %-18s %s" %(ip, hostname, city, region, loc, org))
