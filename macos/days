@@ -1,6 +1,6 @@
 #!/bin/bash
 # days
-# Print the number of days since or until the given date
+# Print number of days between 2 dates or today and any specific date
 
 OSDist=$(uname | tr [A-Z] [a-z])
 if [[ "$OSDist" == "darwin" ]]; then
@@ -21,5 +21,25 @@ fi
 Now=$($Date +%s)
 Target=$($Date +%s --date "$1")
 Dif=$(($Target-$Now))
-Days=$(($Dif/(3600*24)))
+Days=$(($Dif / 86400)) # 86400 seconds in a day
 echo ${Days#-}
+
+exit 0
+# Todo: Rewrite into simple Go exec
+
+if 1 date:
+  abort if single date is NOT valid yyyy-mm-dd
+  date1 = (now, in epoch sec)
+  date2 = given date in epoch sec
+    
+if 2 dates:
+  abort if either date is NOT valid
+  date1 = in epoch sec
+  date2 = in epoch sec
+
+else:
+  usage
+
+diff = ABS(date2 - date1)
+days = diff / 86400 and fraction of day
+
