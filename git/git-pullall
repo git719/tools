@@ -1,0 +1,15 @@
+#!/bin/bash
+# git-pullall
+# Pull all repos
+set -euo pipefail
+for r in `ls -1` ; do
+    if [[ -d "$r/.git" ]]; then
+        (
+            printf "===> $r\n"
+            cd $r
+            git config pull.rebase false
+            git pull
+            printf "\n"
+        )
+    fi
+done
