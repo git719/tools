@@ -1,25 +1,42 @@
 #!/bin/bash
 # rn
-[[ "$#" != "2" ]] && printf "Bulk file re-namer v1.7.3\nUsage: `basename $0` <oldstring> <newstring>\n" && exit 1
+set -euo pipefail  # Fail on any error
+PrintUsage() {
+    printf "Bulk file re-namer v1.7.4\nUsage: `basename $0` \"OldString\" \"NewString\" -f\n"
+    exit 1
+}
+
 OSTYPE=`uname | tr [A-Z] [a-z]`
-echo ""
-OLDSTR=$1 ; NEWSTR=$2
+
+[[ $# -lt 2 || $# -gt 3 ]] && PrintUsage # Accept 2 or 3 arguments
+Oldstr="${1:-DEFAULT1}" ; Newstr="${2:-DEFAULT2}" ; Option="${3:-DEFAULT3}"
+
+[[ "$Option" != "-f" ]] && echo "DRY RUN: Re-run with '-f' option to execute."
+
 OLDIFS="$IFS"
 IFS=$'\n'
-COUNT=0
-for OLDFILE in `ls -1` ; do
-   MATCH=`echo "$OLDFILE" | grep -c -e "$OLDSTR"`
-   if [[ ! "$MATCH" == "0" ]]; then
-      COUNT=1
-      NEWFILE=`echo "$OLDFILE" | sed "s/$OLDSTR/$NEWSTR/"`
-      if [[ "$OSTYPE" = "linux" ]]; then
-         mv -nuv ./"$OLDFILE" ./"$NEWFILE" 
-      else
-         mv ./"$OLDFILE" ./"$NEWFILE" && echo "\"$OLDFILE\" -> \"$NEWFILE\"" 
-      fi
-   fi
+NonMatching=0
+for Oldname in `ls -1` ; do
+    # Skip if existing name doesn't have a literal match to OldString
+    [[ -z `echo "$Oldname" | grep -F "$Oldstr"` ]] && continue
+    NonMatching=1
+
+    Newname="${Oldname//$Oldstr/$Newstr}"
+
+    if [[ "$Option" == "-f" ]]; then
+        # Rename this file
+        if [[ "$OSTYPE" = "linux" ]]; then
+            mv -nuv "$Oldname" "$Newname" 
+        else
+            mv "$Oldname" "$Newname" && echo "\"$Oldname\" -> \"$Newname\"" 
+        fi
+    else
+        # Default behaviour is to show what will happen
+        printf "%-60s  =>  %s\n" "\"$Oldname\"" "\"$Newname\""
+    fi
+
 done
 IFS="$OLDIFS"
-[[ "$COUNT" == "0" ]] && printf "No filename has string '$OLDSTR'.\n\n" && exit 1
-echo ""
+[[ $NonMatching -eq 0 ]] && printf "No filename has string '$Oldstr'.\n" && exit 1
+
 exit 0
