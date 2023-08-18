@@ -1,7 +1,11 @@
 #!/bin/bash
 # dl
-# Simple youtube-dl stub driver
-# Make sure you: brew install youtube-dl
+# Simple yt-dlp stub driver
+#   yt-dp is essentially the replacement to youtube-dl
+# Make sure to install yt-dl:
+#   curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp && chmod a+rx /usr/local/bin/yt-dlp
+# Or upgrade to latest nightly build:
+#   yt-dlp --update-to nightly
 
 [[ "$#" -ne 2 ]] && printf "Usage: $0 NAME \"URL\"\n" && exit
 F="$1"
@@ -11,6 +15,6 @@ E=`echo ${F##*.} | awk '{print tolower($0)}'` # Extension in lowercase
 # Insert missing MP4 extension?
 [[ "mp4" != *"$E"* ]] &&  F="${F}.mp4"
 
-youtube-dl -o "$F" "$U"
+yt-dlp -o "$F" "$U"
 
 exit 0
