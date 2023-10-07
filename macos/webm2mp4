@@ -1,0 +1,8 @@
+#!/bin/bash
+# webm2mp4 
+# Convert WEBM file to MP4
+
+[[ "$#" -ne 1 ]] && printf "Usage: $0 FILENAME\n" && exit
+F="$1"
+ffmpeg -i $F  -c copy $F.mp4
+exit 0
