@@ -6,12 +6,9 @@ for r in `ls -d */` ; do
     r=${r%?}
     if [[ -d "$r/.git" ]]; then
         (
-            printf "==> $r\n"
             cd $r
-            git remote -v
-            printf "\n"
+            git remote -v | tail -1 | awk '{print $2}'
         )
-    else
-        printf "==> $r NOT A REPO\n\n"
     fi
 done
+exit 0
